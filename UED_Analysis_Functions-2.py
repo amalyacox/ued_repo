@@ -473,14 +473,14 @@ def plot_rawdata(material, fluence, temp, pump, deg, data_type, order):
 
 class scan:
     """
-    Does a lot of heavy lifting when we give a directory that holds all our scans and whatnot
+    Inputs: path (str): directory with relevant bragginfo dicts, order_skip txt file, t0 txt file, etc. 
     Needs: numpy as np, pandas as pd, scipy.optimze.curve_fit as curve_fit, material, Q
+    Loads data, computes rms, fits log for t = delay[21]
     """
     def __init__(self, path):
         """
         
         """
-    
         self.data1 = {}
         self.data2 = {}
         if 'order_skip.txt' in os.listdir(path) and os.path.getsize(os.path.join(path, 'order_skip.txt')) != 0:
@@ -531,7 +531,6 @@ class scan:
                 self.bragg_info1.mat = mat1
                 self.bragg_info2.mat = mat2
                 self.delay = pd.read_csv(os.path.join(path, 'delay_time_t0.txt'))['delay_time_t0']
-#                 self.delay = bragg_info1['delay_time']
 
 
         else:
@@ -550,21 +549,20 @@ class scan:
         self.order_arr = order_arr
         
         self.q1_arr = np.array([Q(i, a_dict[self.bragg_info1.mat]) for i in order_arr])
-        self.data1['q_sq'] = 0.5*self.q1_arr**2
+        self.data1['q_sq'] = self.q1_arr**2
         
         if self.type != 'ML':
             self.q2_arr = np.array([Q(i, a_dict[self.bragg_info2.mat]) for i in order_arr])
-            self.data2['q_sq'] = 0.5*self.q2_arr**2 
+            self.data2['q_sq'] = self.q2_arr**2 
         
-    def fit_log(self, order_num=10):
+    def fit_log(self, plot=False, order_num=10):
         """
         Obtain -log(I_t/I_0) and fit vs q^2
         inputs: self, order_num (int, typically 10), order_skip (list of int, orders that may have overlapping peaks to skip)
                 time (int) delay time value to compute the ratio at 
-        outputs: u_rms, x, y 
+        outputs: u_rms, 
         """
         self.q_arr(order_num)
-#         idx = np.argmin(abs(self.bragg_info1.delay_time - time))
         idx = 21
         
         log_inten_1 = np.array([])
@@ -576,7 +574,7 @@ class scan:
         x1 = self.data1['q_sq']
         y1 = -1*(log_inten_1)
         
-        popt1, pcov1 = curve_fit(linear, x1, y1, sigma=log_inten_1_err)
+        popt1, pcov1 = curve_fit(linear, x1, y1, sigma=log_inten_1_err, absolute_sigma=True)
         perr1 = np.sqrt(np.diag(pcov1))
 
         nstd = 2
@@ -603,8 +601,8 @@ class scan:
             x2 = self.data2['q_sq']
             y2 = -1*(log_inten_2)
 
-            popt2, pcov2 = curve_fit(linear, x2, y2, sigma=log_inten_2_err)
-            perr2 = np.sqrt(np.diag(pcov1))
+            popt2, pcov2 = curve_fit(linear, x2, y2, sigma=log_inten_2_err, absolute_sigma=True)
+            perr2 = np.sqrt(np.diag(pcov2))
 
             nstd = 2
             popt2_up = popt2 + nstd * perr2
@@ -617,12 +615,31 @@ class scan:
             self.data2['log_fit2'] = linear(x2, *popt2)
             self.data2['log_fit2_up'] = fit2_up
             self.data2['log_fit2_dw'] = fit2_dw
-            self.data2['params'] = popt2            
+            self.data2['params'] = popt2   
+        if plot: 
+            if self.type != 'ML':
+                plt.scatter(self.data1['q_sq'], -1*elf.data1['log_inten_1'], color='k', label=self.bragg_info1.mat+'_'+str(self.deg)+'_'+self.temp+'_'+self.fluence) 
+                plt.errorbar(self.data1['q_sq'], -1*self.data1['log_inten_1'], self.data1['log_inten_1_err'], color='k', linestyle='')
+                plt.plot(self.data1['q_sq'], self.data1['log_fit1'], 'k') 
+                plt.scatter(self.data2['q_sq'], -1*self.data2['log_inten_2'], color='r', label=self.bragg_info2.mat+'_'+str(self.deg)+'_'+self.temp+'_'+self.fluence) 
+                plt.errorbar(self.data2['q_sq'], -1*self.data2['log_inten_2'], self.data2['log_inten_2_err'], color='r', linestyle='')
+                plt.plot(self.data2['q_sq'], self.data2['log_fit2'], 'r')
+            else: 
+                plt.scatter(self.data1['q_sq'], -1*self.data1['log_inten_1'], color='k', label=self.bragg_info1.mat+'_ML_'+self.temp+'_'+self.fluence) 
+                plt.errorbar(self.data1['q_sq'], -1*self.data1['log_inten_1'], self.data1['log_inten_1_err'], color='k', linestyle='')
+                plt.plot(self.data1['q_sq'], self.data1['log_fit1'], color='k')
+            plt.legend(fontsize=15)
+            plt.xlabel(r'$Q^2 [Å^2]$', size=20) 
+            plt.ylabel(r'$-ln(I/I_0)$', size=20)
+            plt.xticks(size=20);
+            plt.yticks(size=20);
+                       
+                    
     def rms(self, order_num=10):
         """
-        Compute the log intensity change and compare to the order number. fit a line and find the slope, this
-        is u_rms. plot the slope for every time
-        
+        Compute the log intensity change and find dependence on Q^2 fitting a line to obtain u_rms; do this for 
+        every time t and obtain u vs. t data. 
+        Outputs: self.rms1, self.rms1_err, self.rms2, self.rms2_err (if heterobilayer) 
         """
         self.q_arr(order_num)
         rms1 = []
@@ -635,7 +652,7 @@ class scan:
             
             log_inten_1_err = np.array(log_inten_1_err)
             log_inten_1 = np.array(log_inten_1)
-            popt1, pcov1 = curve_fit(linear, self.data1['q_sq'], -1*log_inten_1, sigma=log_inten_1_err)
+            popt1, pcov1 = curve_fit(linear, 0.5*self.data1['q_sq'], -1*log_inten_1, sigma=log_inten_1_err, absolute_sigma=True)
             perr1 = np.sqrt(np.diag(pcov1))
             rms1.append((popt1[0], perr1[0]))
 
@@ -654,7 +671,7 @@ class scan:
                 
                 log_inten_2_err = np.array(log_inten_2_err)
                 log_inten_2 = np.array(log_inten_2)
-                popt2, pcov2 = curve_fit(linear, self.data2['q_sq'], -1*log_inten_2, sigma=log_inten_2_err)
+                popt2, pcov2 = curve_fit(linear, 0.5*self.data2['q_sq'], -1*log_inten_2, sigma=log_inten_2_err, absolute_sigma=True)
                 perr2 = np.sqrt(np.diag(pcov2))
                 rms2.append((popt2[0], perr2[0]))
 
