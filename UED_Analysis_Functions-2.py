@@ -23,8 +23,9 @@ def Q(order, a):
     Length of reciprocal lattice vector to specific order 
     inputs:order, lattice parameter (angstrom)
     outputs: Q #angstrom inverse
+    Lattice constants defined from Zhuang, H., et. al, J. Phys. Chem. C 2013, 117, 40, 20440–20445
     """
-    a_dict = {'MoSe2': 3.327, 'WSe2': 3.327, 'MoS2':3.19, 'WS2':3.19}
+    a_dict = {'MoSe2': 3.32, 'WSe2': 3.32, 'MoS2':3.18, 'WS2':3.18}
     bo_dict = {'order1' : [1,0,0], 'order2' : [2,-1,0], 
            'order3' : [2,0,0], 'order4' :[3,-1,0], 
            'order5' : [3,0,0], 'order6' : [4,-2,0], 
@@ -34,11 +35,10 @@ def Q(order, a):
     bo = bo_dict['order'+str(order)]
     return (2*np.pi * (np.sqrt(4/(3*a**2) * (bo[0]**2 + bo[0]*bo[1] + bo[1]**2))))
 
-def linear(x,m): #b
+def linear(x,m, b = 0):
     """
-    Linear function for fitting
-    """
-    b=0
+    Linear function for fitting u_rms, b = 0, line goes through 0 
+    """ 
     return x*m + b
 
 def rise_decay(x, y0, A, x0, tau_1, tau_2): 
@@ -58,7 +58,7 @@ def dblexppeak(x, y0, A, x0, tau_1, tau_2):
     """
     return y0 + A*(-np.exp(-(x-x0)/tau_1) + np.exp((-x-x0)/tau_2))
 
-def tau1_1(fn):
+def tau1_info1(fn):
     """
     inputs: scan directory (str)
     outputs: tau1 of bragginfo1 
@@ -66,7 +66,7 @@ def tau1_1(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo1_fitparams.txt')
     return fit_params['val'][3], fit_params['err'][3]
     
-def tau1_2(fn):
+def tau1_info2(fn):
     """
     inputs: scan directory (str)
     outputs: tau1 of bragginfo2
@@ -74,7 +74,7 @@ def tau1_2(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo2_fitparams.txt')
     return fit_params['val'][3], fit_params['err'][3]
 
-def tau2_1(fn):
+def tau2_info1(fn):
     """
     inputs: scan directory (str)
     outputs: tau2 of bragginfo1
@@ -82,7 +82,7 @@ def tau2_1(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo1_fitparams.txt')
     return fit_params['val'][4], fit_params['err'][4]
 
-def tau2_2(fn):
+def tau2_info2(fn):
     """
     inputs: scan directory (str)
     outputs: tau2 of bragginfo2
@@ -90,7 +90,7 @@ def tau2_2(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo2_fitparams.txt')
     return fit_params['val'][4], fit_params['err'][4]
 
-def A_1(fn):
+def A_info1(fn):
     """
     inputs: scan directory (str)
     outputs:  of bragginfo2
@@ -98,7 +98,7 @@ def A_1(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo1_fitparams.txt')
     return fit_params['val'][1], fit_params['err'][1]
 
-def A_2(fn):
+def A_info2(fn):
     fit_params = pd.read_csv(f'{fn}/bragginfo2_fitparams.txt')
     return fit_params['val'][1], fit_params['err'][1]
 
@@ -242,26 +242,26 @@ def plot_tau1_fluence(material, fluence, temp, pump, deg, order_num=10, include_
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material and data.type == 'HS':
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(pwr, tau1_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, tau1_1(data_path)[0], tau1_1(data_path)[1], color='k')
+                                    plt.scatter(pwr, tau1_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, tau1_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, tau1_1(data_path)[0], tau1_1(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, tau1_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(pwr, tau1_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, tau1_2(data_path)[0], tau1_2(data_path)[1], color='k')
+                                    plt.scatter(pwr, tau1_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, tau1_info2(data_path)[0], tau1_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, tau1_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, tau1_2(data_path)[0], tau1_2(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, tau1_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, tau1_info2(data_path)[0], tau1_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(pwr, tau1_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr, tau1_1(data_path)[0], tau1_1(data_path)[1], color='k')
+                                plt.scatter(pwr, tau1_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(pwr+0.1, tau1_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr+0.1, tau1_1(data_path)[0], tau1_1(data_path)[1], color='r')
+                                plt.scatter(pwr+0.1, tau1_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr+0.1, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='r')
                                 
                                 
 def plot_tau2_fluence(material, fluence, temp, pump, deg, order_num=10, include_ML=True): 
@@ -278,27 +278,27 @@ def plot_tau2_fluence(material, fluence, temp, pump, deg, order_num=10, include_
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material and data.type == 'HS':
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(pwr, tau2_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, tau2_1(data_path)[0], tau2_1(data_path)[1], color='k')
+                                    plt.scatter(pwr, tau2_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, tau2_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, tau2_1(data_path)[0], tau2_1(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, tau2_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(pwr, tau2_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, tau2_2(data_path)[0], tau2_2(data_path)[1], color='k')
+                                    plt.scatter(pwr, tau2_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, tau2_info2(data_path)[0], tau2_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, tau2_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, tau2_2(data_path)[0], tau2_2(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, tau2_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, tau2_info2(data_path)[0], tau2_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             print('here')
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(pwr, tau2_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr, tau2_1(data_path)[0], tau2_1(data_path)[1], color='k')
+                                plt.scatter(pwr, tau2_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(pwr+0.1, tau2_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr+0.1, tau2_1(data_path)[0], tau2_1(data_path)[1], color='r')
+                                plt.scatter(pwr+0.1, tau2_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr+0.1, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='r')
 
 def plot_tau1_angle(material, fluence, temp, pump, deg, order_num=10, include_ML=True): 
     path = '/cds/home/a/amalyaj/Data/post_alignment/'
@@ -313,26 +313,26 @@ def plot_tau1_angle(material, fluence, temp, pump, deg, order_num=10, include_ML
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material:
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(data.deg, tau1_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, tau1_1(data_path)[0], tau1_1(data_path)[1], color='k')
+                                    plt.scatter(data.deg, tau1_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, tau1_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, tau1_1(data_path)[0], tau1_1(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, tau1_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(data.deg, tau1_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, tau1_2(data_path)[0], tau1_2(data_path)[1], color='k')
+                                    plt.scatter(data.deg, tau1_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, tau1_info2(data_path)[0], tau1_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, tau1_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, tau1_2(data_path)[0], tau1_2(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, tau1_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, tau1_info2(data_path)[0], tau1_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(0, tau1_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0, tau1_1(data_path)[0], tau1_1(data_path)[1], color='k')
+                                plt.scatter(0, tau1_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(0.1, tau1_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0.1, tau1_1(data_path)[0], tau1_1(data_path)[1], color='r')
+                                plt.scatter(0.1, tau1_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0.1, tau1_info1(data_path)[0], tau1_info1(data_path)[1], color='r')
 
 def plot_tau2_angle(material, fluence, temp, pump, deg, order_num=10, include_ML=True): 
     path = '/cds/home/a/amalyaj/Data/post_alignment/'
@@ -347,26 +347,26 @@ def plot_tau2_angle(material, fluence, temp, pump, deg, order_num=10, include_ML
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material:
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(data.deg, tau2_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, tau2_1(data_path)[0], tau2_1(data_path)[1], color='k')
+                                    plt.scatter(data.deg, tau2_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, tau2_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, tau2_1(data_path)[0], tau2_1(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, tau2_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(data.deg, tau2_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, tau2_2(data_path)[0], tau2_2(data_path)[1], color='k')
+                                    plt.scatter(data.deg, tau2_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, tau2_info2(data_path)[0], tau2_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, tau2_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, tau2_2(data_path)[0], tau2_2(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, tau2_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, tau2_info2(data_path)[0], tau2_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(0, tau2_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0, tau2_1(data_path)[0], tau2_1(data_path)[1], color='k')
+                                plt.scatter(0, tau2_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(0.1, tau2_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0.1, tau2_1(data_path)[0], tau2_1(data_path)[1], color='r')
+                                plt.scatter(0.1, tau2_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0.1, tau2_info1(data_path)[0], tau2_info1(data_path)[1], color='r')
                                 
 def plot_A_angle(material, fluence, temp, pump, deg, order_num=10, include_ML=True): 
     path = '/cds/home/a/amalyaj/Data/post_alignment/'
@@ -381,26 +381,26 @@ def plot_A_angle(material, fluence, temp, pump, deg, order_num=10, include_ML=Tr
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material:
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(data.deg, A_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, A_1(data_path)[0], A_1(data_path)[1], color='k')
+                                    plt.scatter(data.deg, A_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, A_info1(data_path)[0], A_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, tau2_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, tau2_1(data_path)[0], A_1(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, tau2_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, tau2_info1(data_path)[0], A_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(data.deg, A_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg, A_2(data_path)[0], A_2(data_path)[1], color='k')
+                                    plt.scatter(data.deg, A_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg, A_info2(data_path)[0], A_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(data.deg+0.1, A_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(data.deg+0.1, A_2(data_path)[0], A_2(data_path)[1], color='r')
+                                    plt.scatter(data.deg+0.1, A_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(data.deg+0.1, A_info2(data_path)[0], A_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(0, A_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0, A_1(data_path)[0], A_1(data_path)[1], color='k')
+                                plt.scatter(0, A_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0, A_info1(data_path)[0], A_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(0.1, A_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(0.1, A_1(data_path)[0], A_1(data_path)[1], color='r')
+                                plt.scatter(0.1, A_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(0.1, A_info1(data_path)[0], A_info1(data_path)[1], color='r')
 
 def plot_A_fluence(material, fluence, temp, pump, deg, order_num=10, include_ML=True): 
     path = '/cds/home/a/amalyaj/Data/post_alignment/'
@@ -416,27 +416,27 @@ def plot_A_fluence(material, fluence, temp, pump, deg, order_num=10, include_ML=
                         if data.deg == deg: 
                             if data.bragg_info1.mat == material and data.type == 'HS':
                                 if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                    plt.scatter(pwr, A_1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, A_1(data_path)[0], A_1(data_path)[1], color='k')
+                                    plt.scatter(pwr, A_info1(data_path)[0], color='k', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, A_info1(data_path)[0], A_info1(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, A_1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, A_1(data_path)[0], A_1(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, A_info1(data_path)[0], color='r', label=data.bragg_info1.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, A_info1(data_path)[0], A_info1(data_path)[1], color='r')
                             elif data.bragg_info2.mat == material:
                                 if data.bragg_info2.mat == 'MoSe2' or data.bragg_info2.mat == 'MoS2':
-                                    plt.scatter(pwr, A_2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr, A_2(data_path)[0], A_2(data_path)[1], color='k')
+                                    plt.scatter(pwr, A_info2(data_path)[0], color='k', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr, A_info2(data_path)[0], A_info2(data_path)[1], color='k')
                                 else:
-                                    plt.scatter(pwr+0.1, A_2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
-                                    plt.errorbar(pwr+0.1, A_2(data_path)[0], A_2(data_path)[1], color='r')
+                                    plt.scatter(pwr+0.1, A_info2(data_path)[0], color='r', label=data.bragg_info2.mat+'_'+str(data.deg)+'_'+data.temp+'_'+data.fluence)
+                                    plt.errorbar(pwr+0.1, A_info2(data_path)[0], A_info2(data_path)[1], color='r')
                                 
                         elif data.bragg_info1.mat == material and data.type == 'ML' and include_ML:
                             print('here')
                             if data.bragg_info1.mat == 'MoSe2' or data.bragg_info1.mat == 'MoS2':
-                                plt.scatter(pwr, A_1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr, A_1(data_path)[0], A_1(data_path)[1], color='k')
+                                plt.scatter(pwr, A_info1(data_path)[0], color='k', marker='*',label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr, A_info1(data_path)[0], A_info1(data_path)[1], color='k')
                             else:
-                                plt.scatter(pwr+0.1, A_1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
-                                plt.errorbar(pwr+0.1, A_1(data_path)[0], A_1(data_path)[1], color='r')
+                                plt.scatter(pwr+0.1, A_info1(data_path)[0], color='r', marker='*', label=data.bragg_info1.mat+'_'+data.type+'_'+data.temp+'_'+data.fluence)
+                                plt.errorbar(pwr+0.1, A_info1(data_path)[0], A_info1(data_path)[1], color='r')
 
 
 def plot_rms(material, fluence, temp, pump, deg, data_type):
@@ -537,7 +537,7 @@ class scan:
             print('data_description not found')
 
     def q_arr(self, order_num):
-        a_dict = {'MoSe2': 3.327, 'WSe2': 3.327, 'MoS2':3.19, 'WS2':3.19}
+        a_dict = {'MoSe2': 3.32, 'WSe2': 3.32, 'MoS2':3.18, 'WS2':3.18}
         bo_dict = {'order1' : [1,0,0], 'order2' : [2,-1,0], 
            'order3' : [2,0,0], 'order4' :[3,-1,0], 
            'order5' : [3,0,0], 'order6' : [4,-2,0], 
