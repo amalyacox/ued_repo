@@ -35,10 +35,11 @@ def Q(order, a):
     bo = bo_dict['order'+str(order)]
     return (2*np.pi * (np.sqrt(4/(3*a**2) * (bo[0]**2 + bo[0]*bo[1] + bo[1]**2))))
 
-def linear(x,m, b = 0):
+def linear(x,m, b):
     """
     Linear function for fitting u_rms, b = 0, line goes through 0 
     """ 
+    b=0
     return x*m + b
 
 def rise_decay(x, y0, A, x0, tau_1, tau_2): 
