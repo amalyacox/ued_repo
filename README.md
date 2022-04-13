@@ -4,4 +4,4 @@ Functions for analyzing diffraction images from MeV UED experiments at the Stanf
 Experimental data consists of time dependent diffraction images of MoS2/WS2 and MoSe2/WSe2 van der Waals Heterostructures. 
 
 
-RMS atomic displacement data obtained using standard Debye-Waller Theory
+RMS atomic displacement data obtained using standard Debye-Waller Theory on Bragg peak $\Delta I / I $ vs. t
