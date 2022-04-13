@@ -103,14 +103,14 @@ class fit:
                 bounds = ([0,0,-np.inf,0,0], [np.inf, np.inf, np.inf, np.inf, np.inf]))
             self.p1 = p1
 
-    def Bin(self, info, num_bins, t0=self.t0, bin_limit='max', plot=True):
+    def Bin(self, info, num_bins, mod_t0=False, bin_limit='max', plot=True):
         """
         Bin raw rms data (subset or full dataset) with specified number of bins. Binning starts at t0 and goes up to specified index. 
         
         Inputs: 
             info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
             num_bins(int): number of bins to use 
-            t0(float): where fit begins, default: self.t0 
+            mod_t0: whether or not to change t0 from default value (self.t0), default False, if != False, must = float (new value for t0)
             bin_limit(str: 'max' or 'tot' or int)  specify where binning should end
                     if 'max' or 'tot': 
                         'max': bin to 5 points after maximum y value 
@@ -127,6 +127,10 @@ class fit:
             self.binned_t(np.array): x values of binned data, includes unbinned data if binning not done on entire range. 
                                      value calculated as median of t values in bin 
         """
+        if mod_t0 == False: 
+            t0 = self.t0 
+        else: 
+            t0 = mod_t0  
         mask = self.scan.delay >= t0
         delay = self.delay 
         if info == 1: 
@@ -192,7 +196,7 @@ class fit:
         self.binned_errs = np.array(binned_errs)
         self.binned_t = np.array(binned_t)
    
-    def scipy_fit(self, info, func=rise_decay, t0=self.t0, shorttime=15, plot=True):
+    def scipy_fit(self, info, func=rise_decay, mod_t0 = False, shorttime=15, plot=True):
         """
         Fit data using scipy.optimize.curve_fit. Initial guess is self.p1 or self.p2 i.e existing values in path for best fit parameters 
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
@@ -200,7 +204,7 @@ class fit:
         Inputs: 
             info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
             func(function): function to fit with, rise_decay (default) or rise_rise_decay
-            t0(float): where fit begins, default: self.t0  
+            mod_t0: whether or not to change t0 from default value (self.t0), default False, if != False, must = float (new value for t0)
             shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
             plot(bool): return plot
 
@@ -208,6 +212,11 @@ class fit:
             self.sci_opt(np.array): optimized parameters via scipy curve_fit  
             self.sci_err(np.array): errors on parameters via scipy curve_fit 
         """
+        if mod_t0 == False: 
+            t0 = self.t0 
+        else: 
+            t0 = mod_t0  
+
         delay = self.delay
         mask = delay >= t0
         if info == 1: 
@@ -239,7 +248,7 @@ class fit:
                 plt.xlim(-2,shorttime)
 
 
-    def lm(self, info, func=rise_decay, scipy=True, num_bins=False, varies=np.repeat(True, 6), t0=self.t0, shorttime=15, plot=True):
+    def lm(self, info, func=rise_decay, scipy=True, num_bins=False, varies=np.repeat(True, 6), mod_t0=False, shorttime=15, plot=True):
         """
         Fit data using lmfit. Initial guess is self.p1 or self.p2 i.e existing values in path for best fit parameters OR parameters found
         fitting with scipy 
@@ -252,14 +261,18 @@ class fit:
             func(function): function to fit with, rise_decay (default) or rise_rise_decay
             scipy(bool): whether or not to fit with scipy first to find initial guesses
             varies(np.array): np.array of len(parameters of func) bool values to specify which parameters to vary and which to hold 
-            t0(float): where fit begins, default: self.t0  
+            mod_t0: whether or not to change t0 from default value (self.t0), default False, if != False, must = float (new value for t0)
             shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
             plot(bool): return plot
 
         Outputs: 
             self.lm_opt: result of fit using lmfit 
         """
-        
+        if mod_t0 == False: 
+            t0 = self.t0 
+        else: 
+            t0 = mod_t0  
+
         if scipy: 
             self.scipy_fit(info, func, t0, shorttime, False)
             popt = self.sci_opt
@@ -310,7 +323,7 @@ class fit:
             if shorttime != False:  
                 plt.xlim(-2,shorttime)
 
-    def interp(self, info, func=rise_decay, points=1000, t0=self.t0, shorttime=15, plot=True):
+    def interp(self, info, func=rise_decay, points=1000, mod_t0 = False, shorttime=15, plot=True):
         """
         Interpolate data to add more points and fit using scipy 
 
@@ -320,7 +333,7 @@ class fit:
             info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
             func(function): function to fit with, rise_decay (default) or rise_rise_decay
             points(int): total number of points for xrange 
-            t0(float): where fit begins, default: self.t0  
+            mod_t0: whether or not to change t0 from default value (self.t0), default False, if != False, must = float (new value for t0)
             shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
             plot(bool): return plot
 
@@ -328,6 +341,11 @@ class fit:
             self.interp_opt: optimized parameters using curve_fit on interpolated data 
             self.interp_err: errors on parameters found using curve_fit on itnerpolated data 
         """
+        if mod_t0 == False: 
+            t0 = self.t0 
+        else: 
+            t0 = mod_t0  
+
         delay = self.delay
         if info == 1: 
             u = self.scan.rms1
