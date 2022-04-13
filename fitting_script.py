@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
-import lmfit
+# import lmfit
 from scipy import interpolate as interp
 import matplotlib.pyplot as plt
 from UED_Analysis_Functions import *
@@ -50,7 +50,7 @@ class fit:
         """
         
         self.scan = scan(path) 
-        print('skipping orders:', self.scan.order_skip)
+#         print('skipping orders:', self.scan.order_skip)
         self.scan.rms()
         self.scan.fit_log(plot=plot)
         delay = self.scan.delay
@@ -117,7 +117,6 @@ class fit:
             idx_max = idx_dict[bin_limit]
         else: 
             idx_max = bin_limit
-        print(idx_max)
         binned_rms = u[mask][-idx_max:]
         binned_rms_err = u_err[mask][-idx_max:]
         binned_delay = delay[mask][-idx_max:]
