@@ -4,19 +4,23 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
-# import lmfit
+import lmfit
 from scipy import interpolate as interp
 import matplotlib.pyplot as plt
 from UED_Analysis_Functions import *
 import matplotlib_specs 
 
+# lattice parameters for relevant materials, from CrystalMaker
 a_dict = {'MoSe2': 3.32, 'WSe2': 3.32, 'MoS2':3.18, 'WS2':3.18}
+
+# an example plane for a specified Bragg order, used to calculate the reciprocal lattice vector to Bragg peaks in said order 
 bo_dict = {'order1' : [1,0,0], 'order2' : [2,-1,0], 
            'order3' : [2,0,0], 'order4' :[3,-1,0], 
            'order5' : [3,0,0], 'order6' : [4,-2,0], 
            'order7' : [4,-1,0], 'order8' : [4,0,0], 
            'order9' : [5,-2,0], 'order10' : [5,-1,0]}
 
+# values found for t_0 i.e where the excitation begins for a specific scan and where fitting should begin 
 t0_dict = {'20211010_1021':-0.1, '20211009_2204':0.1, 
           '20211010_0006': 0.1, '20211009_1623':0.0,
           '20211008_0116':-0.1, '20211007_1521':-0.2, 
@@ -42,20 +46,23 @@ t0_dict = {'20211010_1021':-0.1, '20211009_2204':0.1,
 
 class fit:
     """
+    Class to encompass extra tools for fitting rms atomic displacement data
     """
     def __init__(self, path, plot=True):
         """
-        Fitting a scan from UEDU085
-        Path: path of data file
+        Initialize scan object on path
+        
+        Inputs: 
+            path(str): path of processed data file that includes bragg peak intensity changes necessary for calculating rms atomic displacements
+                and creating object of class "scan" 
+            plot(bool): return plot and save to path 
         """
         
         self.scan = scan(path) 
-#         print('skipping orders:', self.scan.order_skip)
         self.scan.rms()
         self.scan.fit_log(plot=plot)
         delay = self.scan.delay
-        delay = np.array(delay)
-        self.delay = delay
+        self.delay = np.array(delay)
         
         name = path[-13:]
         if name in t0_dict.keys():
@@ -96,12 +103,29 @@ class fit:
                 bounds = ([0,0,-np.inf,0,0], [np.inf, np.inf, np.inf, np.inf, np.inf]))
             self.p1 = p1
 
-    def Bin(self, info, num_bins, t0=0.0, bin_limit='max', plot=True):
+    def Bin(self, info, num_bins, t0=self.t0, bin_limit='max', plot=True):
         """
-        info: specify if we are looking at u or data.rms2
-        t0: where fit begins, default 0.0
-        bin_limit: specify where binning should end; default: 'max' --> bin to 5 points after the maximum
-                 alternatively, 'tot' bin the entire raw data; or any idx chosen 
+        Bin raw rms data (subset or full dataset) with specified number of bins. Binning starts at t0 and goes up to specified index. 
+        
+        Inputs: 
+            info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
+            num_bins(int): number of bins to use 
+            t0(float): where fit begins, default: self.t0 
+            bin_limit(str: 'max' or 'tot' or int)  specify where binning should end
+                    if 'max' or 'tot': 
+                        'max': bin to 5 points after maximum y value 
+                        'tot': bin entire raw data 
+                    if int: 
+                        bin to this specified index 
+            plot(bool): return plot of binned data, default True 
+
+        Outputs: 
+            self.binned_vals(np.array): y values of binned data, includes unbinned data if binning not done on entire range. 
+                                        value calculated as mean of raw data points in bin 
+            self.binned_errs(np.array): errors on y values of binned data, includes unbinned data if binning not done on entire range. 
+                                        errors calculated from propogation of error of errors on raw data in bin 
+            self.binned_t(np.array): x values of binned data, includes unbinned data if binning not done on entire range. 
+                                     value calculated as median of t values in bin 
         """
         mask = self.scan.delay >= t0
         delay = self.delay 
@@ -150,6 +174,7 @@ class fit:
         pre = np.invert(mask)
         t0 = delay[mask][-1]
         t0_err = 1/len(u_err[pre]) * np.sqrt(np.sum(u_err[pre]**2))
+        
         for i, t in enumerate(delay[pre]):
             binned_vals.append(np.nanmean(u[pre]))
             binned_errs.append(t0_err)
@@ -167,12 +192,21 @@ class fit:
         self.binned_errs = np.array(binned_errs)
         self.binned_t = np.array(binned_t)
    
-    def scipy_fit(self, info, func=rise_decay, t0=0.0, shorttime=15, plot=True):
+    def scipy_fit(self, info, func=rise_decay, t0=self.t0, shorttime=15, plot=True):
         """
-        info: designate if data.rms1 or data.rms2
-        func: rise_decay or rise_rise_decay
-        shorttime: limits of x axis, if False, plot full data
-        t0: where to begin fit 
+        Fit data using scipy.optimize.curve_fit. Initial guess is self.p1 or self.p2 i.e existing values in path for best fit parameters 
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
+
+        Inputs: 
+            info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
+            func(function): function to fit with, rise_decay (default) or rise_rise_decay
+            t0(float): where fit begins, default: self.t0  
+            shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
+            plot(bool): return plot
+
+        Outputs: 
+            self.sci_opt(np.array): optimized parameters via scipy curve_fit  
+            self.sci_err(np.array): errors on parameters via scipy curve_fit 
         """
         delay = self.delay
         mask = delay >= t0
@@ -205,10 +239,25 @@ class fit:
                 plt.xlim(-2,shorttime)
 
 
-    def lm(self, info, func=rise_decay, scipy=True, num_bins=False, varies=np.repeat(True, 6), t0=0.0, shorttime=15, plot=True):
+    def lm(self, info, func=rise_decay, scipy=True, num_bins=False, varies=np.repeat(True, 6), t0=self.t0, shorttime=15, plot=True):
         """
-        scipy: fit with scipy first? 
-        varies: if we want to vary any of the parameters
+        Fit data using lmfit. Initial guess is self.p1 or self.p2 i.e existing values in path for best fit parameters OR parameters found
+        fitting with scipy 
+        https://lmfit.github.io/lmfit-py/intro.html
+        
+        Currently only set up for func=rise_decay; needs to be generalized to include rise_rise_decay 
+
+        Inputs: 
+            info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
+            func(function): function to fit with, rise_decay (default) or rise_rise_decay
+            scipy(bool): whether or not to fit with scipy first to find initial guesses
+            varies(np.array): np.array of len(parameters of func) bool values to specify which parameters to vary and which to hold 
+            t0(float): where fit begins, default: self.t0  
+            shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
+            plot(bool): return plot
+
+        Outputs: 
+            self.lm_opt: result of fit using lmfit 
         """
         
         if scipy: 
@@ -261,7 +310,24 @@ class fit:
             if shorttime != False:  
                 plt.xlim(-2,shorttime)
 
-    def interp(self, info, func=rise_decay, points=1000, t0=0.0, shorttime=15, plot=True):
+    def interp(self, info, func=rise_decay, points=1000, t0=self.t0, shorttime=15, plot=True):
+        """
+        Interpolate data to add more points and fit using scipy 
+
+        Currently only set up for func=rise_decay; needs to be generalized to include rise_rise_decay 
+
+        Inputs: 
+            info(int): 1 or 2, specify if we are looking at the first set of bragg peaks or the second (data.rms1, data.rms2)
+            func(function): function to fit with, rise_decay (default) or rise_rise_decay
+            points(int): total number of points for xrange 
+            t0(float): where fit begins, default: self.t0  
+            shorttime: upper limit of x-axis, int (default = 15) or False to plot full x range
+            plot(bool): return plot
+
+        Outputs: 
+            self.interp_opt: optimized parameters using curve_fit on interpolated data 
+            self.interp_err: errors on parameters found using curve_fit on itnerpolated data 
+        """
         delay = self.delay
         if info == 1: 
             u = self.scan.rms1
