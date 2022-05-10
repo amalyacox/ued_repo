@@ -477,7 +477,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                 if compare == 'power': 
                     x = float(data.fluence.replace('mj', ''))
                     xrange.append(x)
-                    ax.set_xlabel(rf'power [$mj /cm^{2}$ ]')
+                    ax.set_xlabel(rf'Fluence [mj cm$^{-2}$ ]')
                 if compare == 'deg': 
                     x = data.deg
                     xrange.append(x)
