@@ -85,6 +85,30 @@ def fit_params(name, info):
         err = pd.read_csv(f'{fn}/bragginfo2_fitparams.txt')['err']
     return params, err 
 
+def fit_params_rrd(name, info): 
+    global path
+    fn = path + name
+    data = scan(fn)
+    if info ==1:
+        params = pd.read_csv(f'{fn}/bragginfo1_fitparams_rrd.txt')['val']
+        err = pd.read_csv(f'{fn}/bragginfo1_fitparams_rrd.txt')['err']
+    if info ==2: 
+        params = pd.read_csv(f'{fn}/bragginfo2_fitparams_rrd.txt')['val']
+        err = pd.read_csv(f'{fn}/bragginfo2_fitparams_rrd.txt')['err']
+    return params, err 
+
+def fit_params_rd(name, info): 
+    global path
+    fn = path + name
+    data = scan(fn)
+    if info ==1:
+        params = pd.read_csv(f'{fn}/bragginfo1_fitparams_rd.txt')['val']
+        err = pd.read_csv(f'{fn}/bragginfo1_fitparams_rd.txt')['err']
+    if info ==2: 
+        params = pd.read_csv(f'{fn}/bragginfo2_fitparams_rd.txt')['val']
+        err = pd.read_csv(f'{fn}/bragginfo2_fitparams_rd.txt')['err']
+    return params, err 
+
 t0_dict = {'20211010_1021':-0.1, '20211009_2204':0.1, 
           '20211010_0006': 0.1, '20211009_1623':0.0,
           '20211008_0116':-0.1, '20211007_1521':-0.2, 
