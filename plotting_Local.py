@@ -130,7 +130,7 @@ t0_dict = {'20211010_1021':-0.1, '20211009_2204':0.1,
           '20211008_0939':0.0, '20211006_0731':0.0, 
           '20211005_1759':-0.2}
 
-def plot_pretty(names, m, w, comparison, shortM = False, shortW=False, norm=False, Bin=False, ML_names=[], error=False,
+def plot_pretty(names, m, w, comparison, fit_type_m = 'rd', fit_type_w='rrd', shortM = False, shortW=False, norm=False, Bin=False, ML_names=[], error=False,
 title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
     """
     Plot t vs rms for a set of scans with m and w on separate plots to compare same dynamics of same material in different layers
@@ -140,6 +140,8 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
         m(str): 'MoSe2' or 'MoS2'
         w(str): 'WSe2' or 'WS2'
         comparison: 'deg', 'pump', 'fluence', 'temp' legend parameters to show what is different between scans 
+        fit_type_w: 'rd', 'rrd' (default) what type of fit to plut for W layer (rise_decay, rise_rise_decay)
+        fit_type_m: 'rd' (default), 'rdd' what type of fit to plut for Mo layer (rise_decay, rise_decay_decay)
         shortM(tup): x range for m plot;  default: False, plot full range
         shortW(tup): x range for w plot; default: False, plot full range 
         norm(bool): scale all data to have maximum 1; default:False
@@ -222,16 +224,17 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                 ax1.fill_between(delay, data.rms1 * 1/fac + data.rms1_err * 1/fac, data.rms1 * 1/fac - data.rms1_err * 1/fac, alpha=0.5)
             if plot_fit: 
                 mask = delay >= 0 
-                params, err = fit_params(name, 1) 
-                if len(params) <=5 : 
+                if fit_type_m == 'rd': 
+                    params, err = fit_params_rd(name, 1) 
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax1.plot(delay - t0, y)
                     if inset: 
                         axins1.plot(delay - t0, y)
                     
-                else: 
-                    y = rise_rise_decay(delay, *params) * 1/fac
+                elif fit_type_m == 'rdd': 
+                    params, err = fit_params_rdd(name, 1)  
+                    y = rise_decay_decay(delay, *params) * 1/fac
                     y[y< 0] = 0 
                     ax1.plot(delay - t0, y)    
                     if inset: 
@@ -259,14 +262,15 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                 ax1.fill_between(delay, data.rms2 * 1/fac + data.rms2_err * 1/fac, data.rms2 * 1/fac - data.rms2_err * 1/fac, alpha=0.5)
             if plot_fit: 
                 mask = delay >= 0 
-                params, err = fit_params(name, 2) 
-                if len(params) <=5 : 
+                if fit_type_m == 'rd': 
+                    params, err = fit_params_rd(name, 2) 
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0 
                     ax1.plot(delay - t0, y)
                     if inset: 
                         axins1.plot(delay - t0, y)
-                else: 
+                elif fit_type_m == 'rdd': 
+                    params, err = fit_params_rdd(name, 2) 
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax1.plot(delay - t0, y)   
@@ -295,14 +299,16 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                 ax2.fill_between(delay, data.rms1 * 1/fac + data.rms1_err * 1/fac, data.rms1 * 1/fac - data.rms1_err * 1/fac, alpha=0.5)
             if plot_fit: 
                 mask = delay >= 0 
-                params, err = fit_params(name, 1) 
-                if len(params) <=5 : 
+                
+                if fit_type_w == 'rd':
+                    params, err = fit_params_rd(name, 1) 
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0 
                     ax2.plot(delay - t0, y)
                     if inset: 
                         axins2.plot(delay - t0, y)
-                else: 
+                elif fit_type_w == 'rrd': 
+                    params, err = fit_params_rrd(name, 1) 
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax2.plot(delay - t0, y)   
@@ -331,14 +337,15 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                 ax2.fill_between(delay, data.rms2 * 1/fac + data.rms2_err * 1/fac, data.rms2 * 1/fac - data.rms2_err * 1/fac, alpha=0.5)
             if plot_fit: 
                 mask = delay >= 0 
-                params, err = fit_params(name, 2) 
-                if len(params) <=5 : 
+                if fit_type_w == 'rd':
+                    params, err = fit_params_rd(name, 2)
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0 
                     ax2.plot(delay - t0, y)
                     if inset: 
                         axins2.plot(delay - t0, y)
-                else: 
+                elif fit_type_w == 'rrd': 
+                    params, err = fit_params_rrd(name, 2)
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y < 0 ] = 0
                     ax2.plot(delay - t0, y)  
@@ -376,7 +383,7 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                     ax1.fill_between(delay, data.rms1 * 1/fac + data.rms1_err * 1/fac, data.rms1 * 1/fac - data.rms1_err * 1/fac, color='k', alpha=0.5)
                 if plot_fit: 
                     mask = delay >= 0 
-                    params, err = fit_params(name, 1) 
+                    params, err = fit_params_rd(name, 1) 
                     if len(params) <=5 : 
                         y = rise_decay(delay, *params) * 1/fac
                         y[y < 0] = 0 
@@ -418,7 +425,7 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
                     ax2.fill_between(delay, data.rms1 * 1/fac + data.rms1_err * 1/fac, data.rms1 * 1/fac - data.rms1_err * 1/fac, color='k', alpha=0.3)
                 if plot_fit: 
                     mask = delay >= 0 
-                    params, err = fit_params(name, 1) 
+                    params, err = fit_params_rd(name, 1) 
                     if len(params) <=5 : 
                         y = rise_decay(delay, *params) * 1/fac
                         y[y < 0] = 0 
@@ -463,7 +470,7 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
     ax2.set_title(wtitle)
     plt.tight_layout()
 
-def plot_tau_single(mat, compare, names, ML_names = []):
+def plot_tau_single(mat, compare, names, fit_type, ML_names = []):
     """ 
     Plot all tau (tau_1 and tau_2, tau_3 and a if applicable) for a specific material in a set of scans
 
@@ -471,6 +478,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
         mat(str): material; 'MoS2', 'MoSe2', 'WS2', 'WSe2'
         compare(str): value for x axis 'deg', 'temp', 'power'
         names(list): scan numbers to plot e.g 20211010_0006
+        fit_type: 'rd' (rise_decay), 'rdd' (rise_decay_decay for Mo), 'rrd' (rise_rise_decay for W) which fitting model tau to plot
         ML_names(list): list of ML scan numbers to additionally plot; default: empty list
     
     Outputs: 
@@ -490,7 +498,9 @@ def plot_tau_single(mat, compare, names, ML_names = []):
         colors = ['k', 'r']
     new_cycler = (cycler(color=colors))
     plt.rc('axes', prop_cycle=new_cycler)
-    if (scan(path + names[0]).bragg_info1.mat == mat and len(fit_params(names[0], 1)[0]) == 5) or (scan(path + names[0]).bragg_info2.mat == mat and len(fit_params(names[0], 2)[0]) == 5):
+
+
+    if fit_type == 'rd': 
         f, (ax1, ax2) = plt.subplots(1, 2, sharey=False, figsize=(12,6))
         for val, ax in zip(['tau_1', 'tau_3'], [ax1, ax2]):
             xrange = []
@@ -511,13 +521,13 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                     xrange.append(x)
                     ax.set_xlabel(rf'Temperature [K]')
                 if data.bragg_info1.mat == mat:
-                    params, err = fit_params(name, 1)
+                    params, err = fit_params_rd(name, 1)
                     y = params[idx]
                     err = err[idx]
                     ax.scatter(x, y)
                     ax.errorbar(x, y, err)
                 if data.bragg_info2.mat == mat:
-                    params, err = fit_params(name, 2)
+                    params, err = fit_params_rd(name, 2)
                     y = params[idx]
                     err = err[idx]
                     ax.scatter(x, y)
@@ -527,7 +537,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                 data = scan(path + name)
                 idx = labels_rd[val]
                 if data.bragg_info1.mat == mat:
-                    params, err = fit_params(name, 1)
+                    params, err = fit_params_rd(name, 1)
                     err = err[idx]
                     y = params[idx]
                     ax.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
@@ -538,7 +548,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
         plt.tight_layout()
 
 
-    else:
+    else: 
         f, (ax1, ax2, ax3, ax4) = plt.subplots(1,4, sharey=False, figsize=(20,5))
         for val, ax in zip(['a', 'tau_1', 'tau_2', 'tau_3'], [ax1, ax2, ax3, ax4]):
             xrange = []
@@ -558,10 +568,11 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                     xrange.append(x)
                     ax.set_xlabel(rf'Temperature [K]')
                 if data.bragg_info1.mat == mat:
-                    params, err = fit_params(name, 1)
-                    if len(params) == 5: 
-                        idx = labels_rd[val]
-                    else: 
+                    if 'Mo' in mat: 
+                        params, err = fit_params_rdd(name, 1)
+                        idx = labels[val]
+                    if 'W' in mat: 
+                        params, err = fit_params_rrd(name, 1)
                         idx = labels[val]
                     if idx != None: 
                         y = params[idx]
@@ -569,13 +580,16 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                         ax.scatter(x, y)
                         ax.errorbar(x, y, err)
                 if data.bragg_info2.mat == mat:
-                    params, err = fit_params(name, 2)
-                    if len(params) == 5: 
-                        idx = labels_rd[val]
-                        if idx == None: 
-                            pass 
-                    else: 
+                    if 'Mo' in mat: 
+                        params, err = fit_params_rdd(name, 2)
                         idx = labels[val]
+                        # if idx == None: 
+                        #     pass
+                    if 'W' in mat: 
+                        params, err = fit_params_rrd(name, 2)
+                        idx = labels[val]
+                        # if idx == None: 
+                        #     pass 
                     if idx != None: 
                         y = params[idx]
                         err = err[idx]
@@ -586,7 +600,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
                 data = scan(path + name)
                 idx = labels_rd[val]
                 if data.bragg_info1.mat == mat and idx != None:
-                    params, err = fit_params(name, 1)
+                    params, err = fit_params_rd(name, 1)
                     err = err[idx]
                     y = params[idx]
                     ax.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
@@ -597,7 +611,7 @@ def plot_tau_single(mat, compare, names, ML_names = []):
         plt.tight_layout()
         
 
-def plot_m_w(names, m, w, comparison, norm=False, Bin=True, shorttime=False, ML=[], title=str(), error=True, plot_fit = True, legend=True, 
+def plot_m_w(names, m, w, comparison, fit_type_m='rd', fit_type_w='rrd', norm=False, Bin=True, shorttime=False, ML=[], title=str(), error=True, plot_fit = True, legend=True, 
 inset = False):
     """
     Plot t vs. rms for m and w on same plot to compare how dynamics m and w differ within the same heterostructure 
@@ -607,6 +621,8 @@ inset = False):
         m(str): 'MoSe2' or 'MoS2'
         w(str): 'WSe2' or 'WS2'
         comparison: 'deg', 'pump', 'fluence', 'temp' legend parameters to show what is different between scans 
+        fit_type_w: 'rd', 'rrd' (default) what type of fit to plut for W layer (rise_decay, rise_rise_decay)
+        fit_type_m: 'rd' (default), 'rdd' what type of fit to plut for Mo layer (rise_decay, rise_decay_decay)
         norm(bool): scale all data to have maximum 1; default:False
         Bin(bool): plot binned data; default: False
         shorttime(bool): plot on range (-2,15) or full dataset; default: False (plot full dataset)
@@ -660,15 +676,16 @@ inset = False):
                 if inset: 
                     axins.errorbar(data.delay, data.rms1 * 1/fac, data.rms1_err * 1/fac, color='k', label=m)
             if plot_fit: 
-                params, err = fit_params(name, 1) 
-                if len(params) <=5 : 
+                if fit_type_m == 'rd': 
+                    params, err = fit_params_rd(name, 1)
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax.plot(delay - t0, y, color='k')
                     if inset: 
                         axins.plot(delay - t0, y, color='k')
-                else: 
-                    y = rise_rise_decay(delay, *params) * 1/fac
+                elif fit_type_m == 'rdd': 
+                    params, err = fit_params_rdd(name, 1)
+                    y = rise_decay_decay(delay, *params) * 1/fac
                     y[y< 0] = 0 
                     ax.plot(delay - t0, y, color='k')
                     if inset: 
@@ -695,14 +712,14 @@ inset = False):
                 if inset: 
                     axins.errorbar(data.delay, data.rms1 * 1/fac, data.rms1_err * 1/fac, color='r', label=w)
             if plot_fit: 
-                params, err = fit_params(name, 1) 
-                if len(params) <=5 : 
-                    y = rise_decay(delay, *params) * 1/fac
+                if fit_type_w == 'rd': 
+                    params, err = fit_params_rd(name, 1)
                     y[y < 0] = 0
                     ax.plot(delay - t0, y, color='r')
                     if inset: 
                         axins.plot(delay - t0, y, color='r')
-                else: 
+                if fit_type_w == 'rrd': 
+                    params, err = fit_params_rrd(name, 1)
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y< 0] = 0 
                     ax.plot(delay - t0, y, color='r')
@@ -731,14 +748,15 @@ inset = False):
                 if inset: 
                     axins.errorbar(data.delay, data.rms2 * 1/fac, data.rms2_err * 1/fac, color='k', label=m)
             if plot_fit: 
-                params, err = fit_params(name, 2) 
-                if len(params) <=5 : 
+                if fit_type_m == 'rd': 
+                    params, err = fit_params_rd(name, 2)
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax.plot(delay - t0, y, color= 'k')
                     if inset: 
                         axins.plot(delay - t0, y, color= 'k')
-                else: 
+                if fit_type_m == 'rdd': 
+                    params, err = fit_params_rdd(name, 2)
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y< 0] = 0 
                     ax.plot(delay - t0, y, color='k')
@@ -767,14 +785,15 @@ inset = False):
                     axins.errorbar(data.delay, data.rms2 * 1/fac, data.rms2_err * 1/fac, color='r', label=w)
 
             if plot_fit: 
-                params, err = fit_params(name, 2) 
-                if len(params) <=5 : 
+                if fit_type_w == 'rd': 
+                    params, err = fit_params_rd(name, 2)
                     y = rise_decay(delay, *params) * 1/fac
                     y[y < 0] = 0
                     ax.plot(delay - t0, y, color='r')
                     if inset: 
                         axins.plot(delay - t0, y, color='r')
-                else: 
+                if fit_type_w == 'rrd': 
+                    params, err = fit_params_rrd(name, 2)
                     y = rise_rise_decay(delay, *params) * 1/fac
                     y[y< 0] = 0 
                     ax.plot(delay - t0, y, color='r')
@@ -810,7 +829,7 @@ inset = False):
                         if inset: 
                             axins.errorbar(data.delay, data.rms1 * 1/fac, data.rms1_err * 1/fac, color='b', label=data.bragg_info1.mat + ' ML', alpha=0.7, linestyle='--')
                     if plot_fit: 
-                        params, err = fit_params(name, 1) 
+                        params, err = fit_params_rd(name, 1) 
                         if len(params) <=5 : 
                             y = rise_decay(delay, *params) * 1/fac
                             y[y < 0] = 0
@@ -833,7 +852,7 @@ inset = False):
                         if inset: 
                             axins.errorbar(data.delay, data.rms1 * 1/fac, data.rms1_err * 1/fac, color='b', label=data.bragg_info1.mat + ' ML', alpha=0.7)
                     if plot_fit: 
-                        params, err = fit_params(name, 1) 
+                        params, err = fit_params_rd(name, 1) 
                         if len(params) <=5 : 
                             y = rise_decay(delay, *params) * 1/fac
                             y[y < 0] = 0
@@ -858,7 +877,7 @@ inset = False):
             ax.legend()    
 
 
-def plot_vals_mw(m, w, val, power, deg, names, ML_names = []):
+def plot_vals_mw(m, w, val, power, deg, names, fit_type_w='rrd', fit_type_m='rd', ML_names = []):
     """
     Plot specified best fit params using bragginfo1/2_fitparams.txt file in path 
 
@@ -869,6 +888,8 @@ def plot_vals_mw(m, w, val, power, deg, names, ML_names = []):
         power(bool): plot vs. fluence 
         deg(bool): plot vs. angle
         names(list): scan numbers to plot e.g 20211010_0006
+        fit_type_w: 'rd', 'rrd' (default) what type of fit to plut for W layer (rise_decay, rise_rise_decay)
+        fit_type_m: 'rd' (default), 'rdd' what type of fit to plut for Mo layer (rise_decay, rise_decay_decay)
         ML_names(list): list of ML scan numbers to additionally plot; default: empty list
     
     Outputs: 
@@ -882,7 +903,6 @@ def plot_vals_mw(m, w, val, power, deg, names, ML_names = []):
     f, (ax1, ax2) = plt.subplots(1, 2, sharey=False, figsize=(10,5))
     xrange = []
     for name in names: 
-        idx = labels[val]
         data = scan(path + name)
         data.rms()
         if power: 
@@ -892,25 +912,45 @@ def plot_vals_mw(m, w, val, power, deg, names, ML_names = []):
             x = data.deg
             xrange.append(x)
         if data.bragg_info1.mat == m:
-            params, err = fit_params_rdd(name, 1)
+            if fit_type_m == 'rdd':
+                params, err = fit_params_rdd(name, 1)
+                idx = labels[val]
+            else: 
+                params, err = fit_params_rd(name, 1)
+                idx = labels_rd[val]
             y = params[idx]
             err = err[idx]
             ax1.scatter(x, y)
             ax1.errorbar(x, y, err)
         if data.bragg_info2.mat == m:
-            params, err = fit_params_rdd(name, 2)
+            if fit_type_m == 'rdd':
+                params, err = fit_params_rdd(name, 2)
+                idx = labels[val]
+            else: 
+                params, err = fit_params_rd(name, 2)
+                idx = labels_rd[val]
             y = params[idx]
             err = err[idx]
             ax1.scatter(x, y)
             ax1.errorbar(x, y, err)
         if data.bragg_info1.mat == w:
-            params, err = fit_params(name, 1)
+            if fit_type_w == 'rrd':
+                params, err = fit_params_rrd(name, 1)
+                idx = labels[val]
+            else: 
+                params, err = fit_params_rd(name, 1)
+                idx = labels_rd[val]
             y = params[idx]
             err = err[idx]
             ax2.scatter(x, y)
             ax2.errorbar(x, y, err)
         if data.bragg_info2.mat == w:
-            params, err = fit_params(name, 2)
+            if fit_type_w == 'rrd':
+                params, err = fit_params_rrd(name, 2)
+                idx = labels[val]
+            else: 
+                params, err = fit_params_rd(name, 2)
+                idx = labels_rd[val]
             y = params[idx]
             err = err[idx]
             ax2.scatter(x, y)
@@ -925,14 +965,14 @@ def plot_vals_mw(m, w, val, power, deg, names, ML_names = []):
             idx_rd = labels_rd[val]
             if data.bragg_info1.mat == m:
                 idx = idx_rd
-                params, err = fit_params(name, 1)
+                params, err = fit_params_rd(name, 1)
                 err = err[idx]
                 y = params[idx]
                 ax1.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
                 ax1.hlines(y, min(xrange) - 1, max(xrange) + 2, color = 'k', linestyles='--')
             if data.bragg_info1.mat == w:
                 idx = idx_rd
-                params, err = fit_params(name, 1)
+                params, err = fit_params_rd(name, 1)
                 err = err[idx]
                 y = params[idx]
                 ax2.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
