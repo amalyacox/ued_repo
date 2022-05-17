@@ -446,7 +446,7 @@ title = str(), plot_fit=False, legend=True, inset=False, idx=(5, 1)):
     if legend and inset: 
         ax1.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
         ax2.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
-    else: 
+    elif legend: 
         ax1.legend()
         ax2.legend()
     if shortM !=False:
