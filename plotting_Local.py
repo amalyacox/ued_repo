@@ -994,7 +994,7 @@ def plot_vals_mw(m, w, val, power, deg, names, fit_type_w='rrd', fit_type_m='rd'
     ax2.set_title(wtitle)
 
 
-def plot_pretty_individual(names, m, w, comparison, ax1, ax2, fit_type_m = 'rd', fit_type_w='rrd', norm=False, Bin=False, ML_names=[], error=False, plot_fit=False, inset=False, idx=(5, 1)):
+def plot_pretty_individual(names, m, w, comparison, ax1, ax2, fit_type_m = 'rd', fit_type_w='rrd', norm=False, Bin=False, ML_names=[], error=False, plot_fit=False, inset=False, idx=(5, 1), colors=None):
     """
     Plot t vs rms for a set of scans with m and w on separate plots to compare same dynamics of same material in different layers
     Takes axes for flexibility with where and how the plot looks
@@ -1014,21 +1014,21 @@ def plot_pretty_individual(names, m, w, comparison, ax1, ax2, fit_type_m = 'rd',
         plot_fit(bool): plot best fit line from default params in directory; default:False
         inset(bool): add inset showing range of longtimes; default:False
         idx(tup): range of what values around maximum to average to 1; default:(max-5:max+1)
+        colors: cycler for plot, default None goes to viridis cmap 
     
     Outputs: 
         t vs. rms for m and w with m and w on separate plots 
     """
-    colors = []
     idx1, idx2 = idx
-    cmap = matplotlib.cm.get_cmap('viridis', 5)
-    for i in range(cmap.N):
-        rgba = cmap(i)
-        colors.append(matplotlib.colors.rgb2hex(rgba))
+    if colors == None: 
+        colors = []
+        cmap = matplotlib.cm.get_cmap('viridis', 5)
+        for i in range(cmap.N):
+            rgba = cmap(i)
+            colors.append(matplotlib.colors.rgb2hex(rgba))
     if plot_fit: 
         colors = [c for c in colors for _ in (0, 1)]
-        new_cycler = (cycler(color=colors))
-    else: 
-        new_cycler = (cycler(color=colors))
+    new_cycler = (cycler(color=colors)) 
     plt.rc('axes', prop_cycle=new_cycler)
 
         
@@ -1296,3 +1296,124 @@ def plot_pretty_individual(names, m, w, comparison, ax1, ax2, fit_type_m = 'rd',
                         axins2.plot(delay, data.rms1 * 1/fac, label='Monolayer', color='k', marker='o', mew=2, markersize=2, linestyle = '')
 
 
+def plot_tau_individual(mat, compare, names, fit_type, val, ax, xrange, ML_names = []):
+    """ 
+    Plot specific param for a specific material in a set of scans
+
+    Inputs: 
+        mat(str): material; 'MoS2', 'MoSe2', 'WS2', 'WSe2'
+        compare(str): value for x axis 'deg', 'temp', 'power'
+        names(list): scan numbers to plot e.g 20211010_0006
+        fit_type: 'rd' (rise_decay), 'rdd' (rise_decay_decay for Mo), 'rrd' (rise_rise_decay for W) which fitting model tau to plot
+        ax (matplotlib.axes._subplots.AxesSubplot): subplot for plotting
+        val: parameter to plot (a, tau_1, tau_2, tau_3)
+        ML_names(list): list of ML scan numbers to additionally plot; default: empty list
+    
+    Outputs: 
+        set of tau vs. compare value for specific material
+    
+    """
+    labels = {'y0':0, 'A':1, 'a':2, 'x0':3, 'tau_1':4, 'tau_2':5, 'tau_3':6}
+    labels_rd = {'y0':0, 'A':1, 'a':None, 'x0':2, 'tau_1':3, 'tau_2':None, 'tau_3':4}
+    ylabel_dict = {'a':r'$\tau_2$ contribution', 'tau_1':r'$\tau_1$ [ps]', 'tau_2':r'$\tau_2$ [ps]', 'tau_3':r'$\tau_3$ [ps]'}
+
+    colors = []
+    cmap = matplotlib.cm.get_cmap('viridis', 5)
+    for i in range(cmap.N):
+        rgba = cmap(i)
+        colors.append(matplotlib.colors.rgb2hex(rgba))
+       
+    new_cycler = (cycler(color=colors))
+    plt.rc('axes', prop_cycle=new_cycler)
+
+    if fit_type == 'rd':
+        idx = labels_rd[val]
+        for name in names:
+            data = scan(path + name)
+            if compare == 'power': 
+                x = float(data.fluence.replace('mj', ''))
+                ax.set_xlabel(rf'Fluence [mj cm$^{-2}$ ]')
+            if compare == 'deg': 
+                x = data.deg
+                ax.set_xlabel(rf'Twist Angle [$\Delta \phi$]')
+            if compare == 'temp':
+                x = int(data.temp.replace('K', ''))
+                ax.set_xlabel(rf'Temperature [K]')
+            if data.bragg_info1.mat == mat:
+                params, err = fit_params_rd(name, 1)
+                y = params[idx]
+                err = err[idx]
+                ax.scatter(x, y)
+                ax.errorbar(x, y, err)
+            if data.bragg_info2.mat == mat:
+                params, err = fit_params_rd(name, 2)
+                y = params[idx]
+                err = err[idx]
+                ax.scatter(x, y)
+                ax.errorbar(x, y, err)
+        points = np.arange(min(xrange) - 1, max(xrange) + 3)
+        for name in ML_names: 
+            data = scan(path + name)
+            idx = labels_rd[val]
+            if data.bragg_info1.mat == mat:
+                params, err = fit_params_rd(name, 1)
+                err = err[idx]
+                y = params[idx]
+                ax.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
+                ax.hlines(y, min(xrange) - 1, max(xrange) + 2, color = 'k', linestyles='--')
+        title = mat.replace('2', '$_2$')
+        ax.set_title(title)
+        ax.set_ylabel(ylabel_dict[val])
+
+    else:
+        for name in names: 
+            data = scan(path + name)
+            data.rms()
+            if compare == 'power': 
+                x = float(data.fluence.replace('mj', ''))
+                ax.set_xlabel(rf'power [$mj /cm^{2}$ ]')
+            if compare == 'deg': 
+                x = data.deg
+                ax.set_xlabel(rf'Twist Angle [$\Delta \phi$]')
+            if compare == 'temp':
+                x = int(data.temp.replace('K', ''))
+                ax.set_xlabel(rf'Temperature [K]')
+            if data.bragg_info1.mat == mat:
+                if 'Mo' in mat: 
+                    params, err = fit_params_rdd(name, 1)
+                    idx = labels[val]
+                if 'W' in mat: 
+                    params, err = fit_params_rrd(name, 1)
+                    idx = labels[val]
+                if idx != None: 
+                    y = params[idx]
+                    err = err[idx]
+                    ax.scatter(x, y)
+                    ax.errorbar(x, y, err)
+            if data.bragg_info2.mat == mat:
+                if 'Mo' in mat: 
+                    params, err = fit_params_rdd(name, 2)
+                    idx = labels[val]
+
+                if 'W' in mat: 
+                    params, err = fit_params_rrd(name, 2)
+                    idx = labels[val]
+                if idx != None: 
+                    y = params[idx]
+                    err = err[idx]
+                    ax.scatter(x, y)
+                    ax.errorbar(x, y, err)
+        points = np.arange(min(xrange) - 1, max(xrange) + 3)
+        for name in ML_names: 
+            data = scan(path + name)
+            idx = labels_rd[val]
+            if data.bragg_info1.mat == mat and idx != None:
+                params, err = fit_params_rd(name, 1)
+                err = err[idx]
+                y = params[idx]
+                ax.fill_between(points, np.repeat(y - err, len(points)), np.repeat(y + err, len(points)), color='k', alpha=0.3)
+                ax.hlines(y, min(xrange) - 1, max(xrange) + 2, color = 'k', linestyles='--')
+        title = mat.replace('2', '$_2$')
+        ax.set_title(title)
+        ax.set_ylabel(ylabel_dict[val])
+    plt.tight_layout()
