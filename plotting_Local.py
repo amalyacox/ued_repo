@@ -5,8 +5,8 @@ import pandas as pd
 from UED_Analysis_Functions_Local import *
 import matplotlib_specs
 from cycler import cycler
-import matplotlib.pyplot as plt
 import matplotlib 
+import matplotlib.pyplot as plt
 import copy
 from fitting_script import fit
 import matplotlib.gridspec as gridspec
